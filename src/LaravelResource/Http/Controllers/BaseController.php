@@ -1,5 +1,6 @@
 <?php namespace LaravelResource\Http\Controllers;
 
+use Database\Rest\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller as IlluminateController;
 use LaravelResource\Transformers\PaginatorTransformer;
@@ -32,6 +33,16 @@ abstract class BaseController extends IlluminateController
             if($queries)
             {
                 $data += ['queries' => $queries];
+            }
+
+            if(class_exists(Client::class))
+            {
+                $requests = Client::getRequestLog();
+
+                if($requests)
+                {
+                    $data += ['restRequests' => $requests];
+                }
             }
         }
 
