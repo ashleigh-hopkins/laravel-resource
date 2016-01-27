@@ -32,12 +32,14 @@ abstract class ResourceController extends BaseController
      */
     public function destroy($id) // DELETE
     {
+        $object = $this->repository->get($id);
+
         if(isset($this->events['deleting']))
         {
-            event(new $this->events['deleting']($id));
+            event(new $this->events['deleting']($object));
         }
 
-        $object = $this->repository->delete($id);
+        $this->repository->delete($id);
 
         if(isset($this->events['deleted']))
         {
@@ -157,16 +159,19 @@ abstract class ResourceController extends BaseController
 
         if($input !== null)
         {
+            $object = $this->repository->get($id);
+
             if(isset($this->events['updating']))
             {
-                event(new $this->events['updating']($id, $input));
+                event(new $this->events['updating']($object, $input));
             }
 
-            $object = $this->repository->update($id, $input);
+            $existing = $object->toArray();
+            $this->repository->update($object, $input);
 
             if(isset($this->events['updated']))
             {
-                event(new $this->events['updated']($object));
+                event(new $this->events['updated']($object, $existing));
             }
 
             return $this->respondSuccess(

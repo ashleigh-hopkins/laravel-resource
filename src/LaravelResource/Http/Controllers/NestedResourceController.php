@@ -45,12 +45,14 @@ abstract class NestedResourceController extends BaseController
         $parentId = (int)$args[$count - 2];
         $id = (int)$args[$count - 1];
 
+        $object = $this->repository->getForParent($id, $parentId);
+
         if(isset($this->events['deleting']))
         {
-            event(new $this->events['deleting']($id, $parentId));
+            event(new $this->events['deleting']($object, $parentId));
         }
 
-        $object = $this->repository->deleteForParent($id, $parentId);
+        $this->repository->deleteForParent($object, $parentId);
 
         if(isset($this->events['deleted']))
         {
@@ -183,16 +185,19 @@ abstract class NestedResourceController extends BaseController
 
         if($input !== null)
         {
+            $object = $this->repository->getForParent($id, $parentId);
+
             if(isset($this->events['updating']))
             {
-                event(new $this->events['updating']($id, $parentId, $input));
+                event(new $this->events['updating']($object, $parentId, $input));
             }
 
-            $object = $this->repository->updateForParent($id, $parentId, $input);
+            $existing = $object->toArray();
+            $this->repository->updateForParent($object, $parentId, $input);
 
             if(isset($this->events['updated']))
             {
-                event(new $this->events['updated']($object, $parentId));
+                event(new $this->events['updated']($object, $parentId, $existing));
             }
 
             return $this->respondSuccess(

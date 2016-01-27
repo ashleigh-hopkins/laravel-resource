@@ -1,6 +1,7 @@
 <?php namespace LaravelResource\Http\Controllers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use LaravelResource\Database\Eloquent\VersionTracking;
 use LaravelResource\Repositories\Contracts\EntityRepository;
@@ -45,12 +46,14 @@ abstract class PivotController extends BaseController
         $parentId = (int)$args[$count - 2];
         $id = (int)$args[$count - 1];
 
+        $object = $this->repository->getForParent($id, $parentId);
+
         if(isset($this->events['deleting']))
         {
-            event(new $this->events['deleting']($id, $parentId));
+            event(new $this->events['deleting']($object, $parentId));
         }
 
-        $object = $this->repository->deleteForParent($id, $parentId);
+        $this->repository->deleteForParent($object, $parentId);
 
         if(isset($this->events['deleted']))
         {
@@ -148,16 +151,26 @@ abstract class PivotController extends BaseController
 
         if($input !== null)
         {
+            $object = null;
+            $existing = [];
+
+            try
+            {
+                $object = $this->repository->getForParent($id, $parentId);
+                $existing = $object->toArray();
+            }
+            catch (ModelNotFoundException $e) {}
+
             if(isset($this->events['updating']))
             {
-                event(new $this->events['updating']($id, $parentId, $input));
+                event(new $this->events['updating']($object, $parentId, $input));
             }
 
             $object = $this->repository->updateForParent($id, $parentId, $input);
 
             if(isset($this->events['updated']))
             {
-                event(new $this->events['updated']($object, $parentId));
+                event(new $this->events['updated']($object, $parentId, $existing));
             }
 
             return $this->respondSuccess(
