@@ -19,6 +19,8 @@ abstract class ResourceController extends BaseController
 
     protected $withRelations = [];
 
+    protected $filterKeys = [];
+
     public function __construct(EntityRepository $repository, Transformer $transformer, Validator $validator = null)
     {
         $this->repository = $repository;
@@ -60,6 +62,21 @@ abstract class ResourceController extends BaseController
         if($with = $this->getWith($request))
         {
             $query->with($with);
+        }
+
+        if($filter = $this->getFilter($request))
+        {
+            foreach ($filter as $k => $v)
+            {
+                if(is_array($v))
+                {
+                    $query->whereIn($k, $v);
+                }
+                else
+                {
+                    $query->where($k, '=', $v);
+                }
+            }
         }
 
         if($request->has('page_size') || $request->has('page'))
@@ -211,6 +228,38 @@ abstract class ResourceController extends BaseController
     protected function getInputForUpdate(Request $request)
     {
         return $request->all();
+    }
+
+    /**
+     * @param Request $request
+     * @return string[]|null
+     */
+    protected function getFilter(Request $request)
+    {
+        if ($request->has('filter'))
+        {
+            if($filter = $request->input('filter'))
+            {
+                foreach ($filter as $k => &$v)
+                {
+                    if(in_array($k, $this->filterKeys) == false)
+                    {
+                        unset($filter[$k]);
+                    }
+                    else
+                    {
+                        if(is_string($v) && strstr($v, ','))
+                        {
+                            $v = filter_null(explode(',', $v));
+                        }
+                    }
+                }
+
+                return $filter;
+            }
+        }
+
+        return null;
     }
 
     /**
