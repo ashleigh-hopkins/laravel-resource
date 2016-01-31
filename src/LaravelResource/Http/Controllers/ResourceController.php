@@ -149,6 +149,11 @@ abstract class ResourceController extends BaseController
                 event(new $this->events['created']($object));
             }
 
+            if($with = $this->getWith($request))
+            {
+                $object->load($with);
+            }
+
             return $this->respondSuccess(
                 $this->transform($object), ['Etag' => $this->getEtag($object)]);
         }
@@ -189,6 +194,11 @@ abstract class ResourceController extends BaseController
             if(isset($this->events['updated']))
             {
                 event(new $this->events['updated']($object, $existing));
+            }
+
+            if($with = $this->getWith($request))
+            {
+                $object->load($with);
             }
 
             return $this->respondSuccess(
@@ -236,30 +246,24 @@ abstract class ResourceController extends BaseController
      */
     protected function getFilter(Request $request)
     {
-        if ($request->has('filter'))
+        $filter = [];
+
+        $input = filter_null($request->only($this->filterKeys));
+
+        if($input)
         {
-            if($filter = $request->input('filter'))
+            foreach ($input as $key => $value)
             {
-                foreach ($filter as $k => &$v)
+                if (is_string($value) && strstr($value, ','))
                 {
-                    if(in_array($k, $this->filterKeys) == false)
-                    {
-                        unset($filter[$k]);
-                    }
-                    else
-                    {
-                        if(is_string($v) && strstr($v, ','))
-                        {
-                            $v = filter_null(explode(',', $v));
-                        }
-                    }
+                    $value = filter_null(explode(',', $value));
                 }
 
-                return $filter;
+                $filter[$key] = $value;
             }
         }
 
-        return null;
+        return $filter ?: null;
     }
 
     /**
