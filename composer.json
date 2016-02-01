@@ -10,7 +10,10 @@
 	"autoload": {
 		"psr-4": {
 			"LaravelResource\\": "src/LaravelResource/"
-		}
+		},
+		"files": [
+			"src/helpers.php"
+		]
 	},
 	"require": {
 		"php": ">=5.5.9",
