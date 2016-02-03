@@ -24,6 +24,10 @@ abstract class PivotController extends BaseController
 
     protected $validator;
 
+    protected $withRelations = [];
+
+    protected $filterKeys = [];
+
     public function __construct(PivotEntityRepository $repository,
                                 $parentRepositories,
                                 Transformer $transformer,
@@ -76,6 +80,26 @@ abstract class PivotController extends BaseController
 
         $query = $this->repository->queryForParent($parentId);
 
+        if($with = $this->getWith($request))
+        {
+            $query->with($with);
+        }
+
+        if($filter = $this->getFilter($request))
+        {
+            foreach ($filter as $k => $v)
+            {
+                if(is_array($v))
+                {
+                    $query->whereIn($k, $v);
+                }
+                else
+                {
+                    $query->where($k, '=', $v);
+                }
+            }
+        }
+
         if($request->has('page_size') || $request->has('page'))
         {
             $this->setPaginator($pagination = $query->paginate((int)$request->input('page_size')));
@@ -105,6 +129,12 @@ abstract class PivotController extends BaseController
         $id = (int)$args[$count - 1];
 
         $object = $this->repository->getForParent($id, $parentId);
+
+        if($with = $this->getWith($request))
+        {
+            $object->load($with);
+        }
+
         $remoteEtag = $request->header('If-None-Match');
         $etag = $this->getEtag($object);
 
@@ -173,6 +203,11 @@ abstract class PivotController extends BaseController
                 event(new $this->events['updated']($object, $parentId, $existing));
             }
 
+            if($with = $this->getWith($request))
+            {
+                $object->load($with);
+            }
+
             return $this->respondSuccess(
                 $this->transform($object), ['Etag' => $this->getEtag($object)]);
         }
@@ -210,6 +245,61 @@ abstract class PivotController extends BaseController
     protected function getInputForUpdate(Request $request, $parentIds)
     {
         return $request->all();
+    }
+
+    /**
+     * @param Request $request
+     * @return string[]|null
+     */
+    protected function getFilter(Request $request)
+    {
+        $filter = [];
+
+        $input = filter_null($request->only($this->filterKeys));
+
+        if($input)
+        {
+            foreach ($input as $key => $value)
+            {
+                if (is_string($value) && strstr($value, ','))
+                {
+                    $value = filter_null(explode(',', $value));
+                }
+
+                $filter[$key] = $value;
+            }
+        }
+
+        return $filter ?: null;
+    }
+
+    /**
+     * @param Request $request
+     * @return string[]|null
+     */
+    protected function getWith(Request $request)
+    {
+        if ($request->has('with'))
+        {
+            if($with = $request->input('with'))
+            {
+                if(is_array($with) == false)
+                {
+                    $with = explode(',', $with);
+                }
+
+                if ($with = filter_null($with))
+                {
+                    return filter_null(array_map(function (&$e)
+                    {
+                        return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
+
+                    }, $with));
+                }
+            }
+        }
+
+        return null;
     }
 
     final protected function transform($item)
