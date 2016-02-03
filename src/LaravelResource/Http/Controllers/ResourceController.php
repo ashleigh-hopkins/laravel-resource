@@ -57,7 +57,7 @@ abstract class ResourceController extends BaseController
      */
     public function index(Request $request) // GET
     {
-        $query = $this->repository->query();
+        $query = property_exists($this, 'query') ? $this->query : $this->repository->query();
 
         if($with = $this->getWith($request))
         {
@@ -74,7 +74,7 @@ abstract class ResourceController extends BaseController
                 }
                 else
                 {
-                    $query->where($k, '=', $v);
+                    $query->where([$k => $v]);
                 }
             }
         }
