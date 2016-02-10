@@ -23,9 +23,9 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
      */
     public function allForParent($parent)
     {
-        $parent = $this->getParentModel($parent);
+        $query = $this->queryForParent($parent);
 
-        return $parent->{$this->relation}()->all();
+        return $query->all();
     }
 
     /**
@@ -71,9 +71,9 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
      */
     public function getForParent($id, $parent)
     {
-        $parent = $this->getParentModel($parent);
+        $query = $this->queryForParent($parent);
 
-        return $parent->{$this->relation}()->findOrFail($id);
+        return $query->where($this->model->getKeyName(), '=', $id)->firstOrFail();
     }
 
     /**
@@ -83,9 +83,9 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
      */
     public function paginateForParent($parent, $perPage = null)
     {
-        $parent = $this->getParentModel($parent);
+        $query = $this->queryForParent($parent);
 
-        return $parent->{$this->relation}()->paginate($perPage);
+        return $query->paginate($perPage);
     }
 
     /**
@@ -125,7 +125,7 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         if ($mixed instanceof Model == false)
         {
-            if(is_numeric($mixed) == false)
+            if(is_string($mixed) == false)
             {
                 $mixed = data_get($mixed, 'id');
             }

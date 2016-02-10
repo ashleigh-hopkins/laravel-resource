@@ -20,7 +20,7 @@ abstract class EloquentEntityRepository
      */
     public function all()
     {
-        return $this->model->all();
+        return $this->query()->get();
     }
 
     /**
@@ -61,7 +61,7 @@ abstract class EloquentEntityRepository
      */
     public function get($id)
     {
-        return $this->model->findOrFail($id);
+        return $this->query()->where($this->model->getKeyName(), '=', $id)->firstOrFail();
     }
 
     /**
@@ -70,7 +70,7 @@ abstract class EloquentEntityRepository
      */
     public function paginate($perPage = null)
     {
-        return $this->model->paginate($perPage);
+        return $this->query()->paginate($perPage);
     }
 
     /**

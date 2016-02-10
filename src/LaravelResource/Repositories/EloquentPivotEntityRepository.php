@@ -26,9 +26,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      */
     public function allForParent($parent)
     {
-        $parent = $this->getParentModel($parent);
-
-        return $parent->{$this->relationRaw}()->all();
+        return $this->queryForParent($parent)->get();
     }
 
     /**
@@ -63,12 +61,9 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      */
     public function getForParent($id, $parent)
     {
-        $parent = $this->getParentModel($parent);
-
         $relation = $parent->{$this->relation}();
-        $relationRaw = $parent->{$this->relationRaw}();
 
-        return $relationRaw->where([$relation->getOtherKey() => $id])->firstOrFail();
+        return $this->queryForParent($parent)->where([$relation->getOtherKey() => $id])->firstOrFail();
     }
 
     /**
@@ -78,9 +73,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      */
     public function paginateForParent($parent, $perPage = null)
     {
-        $parent = $this->getParentModel($parent);
-
-        return $parent->{$this->relationRaw}()->paginate($perPage);
+        return $this->queryForParent($parent)->paginate($perPage);
     }
 
     /**
