@@ -54,6 +54,16 @@ class ApiHandler extends ExceptionHandler
                 {
                     $data['context'] = ['model' => $e->getModel()];
                     $data['queries'] = \DB::getQueryLog();
+
+                    if(class_exists('RestModel\Database\Rest\Client'))
+                    {
+                        $requests = \RestModel\Database\Rest\Client::getRequestLog();
+
+                        if($requests)
+                        {
+                            $data += ['restRequests' => $requests];
+                        }
+                    }
                 }
 
                 return \Response::json($data, 404);
@@ -82,6 +92,16 @@ class ApiHandler extends ExceptionHandler
                     ];
 
                     $data['queries'] = \DB::getQueryLog();
+
+                    if(class_exists('RestModel\Database\Rest\Client'))
+                    {
+                        $requests = \RestModel\Database\Rest\Client::getRequestLog();
+
+                        if($requests)
+                        {
+                            $data += ['restRequests' => $requests];
+                        }
+                    }
                 }
 
                 return \Response::json($data, $code, [], JSON_PARTIAL_OUTPUT_ON_ERROR);
