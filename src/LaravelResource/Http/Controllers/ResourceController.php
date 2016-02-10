@@ -1,15 +1,13 @@
 <?php namespace LaravelResource\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use LaravelResource\Database\Eloquent\VersionTracking;
 use LaravelResource\Repositories\Contracts\EntityRepository;
 use LaravelResource\Transformers\Contracts\Transformer;
 use LaravelResource\Validators\Contracts\Validator;
 
 abstract class ResourceController extends BaseController
 {
-    protected $events = [];
+    use ControllerHelper;
 
     protected $repository;
 
@@ -17,11 +15,13 @@ abstract class ResourceController extends BaseController
 
     protected $validator;
 
-    protected $withRelations = [];
-
-    protected $filterKeys = [];
-
-    public function __construct(EntityRepository $repository, Transformer $transformer, Validator $validator = null)
+    /**
+     * ResourceController constructor.
+     * @param EntityRepository $repository
+     * @param Transformer $transformer
+     * @param Validator|null $validator
+     */
+    public function __construct($repository, Transformer $transformer, Validator $validator = null)
     {
         $this->repository = $repository;
         $this->transformer = $transformer;
@@ -36,17 +36,11 @@ abstract class ResourceController extends BaseController
     {
         $object = $this->repository->get($id);
 
-        if(isset($this->events['deleting']))
-        {
-            event(new $this->events['deleting']($object));
-        }
+        $this->fireEvent('deleting', $object);
 
         $this->repository->delete($id);
 
-        if(isset($this->events['deleted']))
-        {
-            event(new $this->events['deleted']($object));
-        }
+        $this->fireEvent('deleted', $object);
 
         return $this->respondNoContent();
     }
@@ -64,20 +58,7 @@ abstract class ResourceController extends BaseController
             $query->with($with);
         }
 
-        if($filter = $this->getFilter($request))
-        {
-            foreach ($filter as $k => $v)
-            {
-                if(is_array($v))
-                {
-                    $query->whereIn($k, $v);
-                }
-                else
-                {
-                    $query->where([$k => $v]);
-                }
-            }
-        }
+        $this->runFilter($request, $query);
 
         if($request->has('page_size') || $request->has('page'))
         {
@@ -137,17 +118,11 @@ abstract class ResourceController extends BaseController
 
         if($input !== null)
         {
-            if(isset($this->events['creating']))
-            {
-                event(new $this->events['creating']($input));
-            }
+            $this->fireEvent('creating', $input);
 
             $object = $this->repository->create($input);
 
-            if(isset($this->events['created']))
-            {
-                event(new $this->events['created']($object));
-            }
+            $this->fireEvent('created', $object);
 
             if($with = $this->getWith($request))
             {
@@ -181,18 +156,12 @@ abstract class ResourceController extends BaseController
         {
             $object = $this->repository->get($id);
 
-            if(isset($this->events['updating']))
-            {
-                event(new $this->events['updating']($object, $input));
-            }
+            $this->fireEvent('updating', $object, $input);
 
             $existing = $object->toArray();
             $this->repository->update($object, $input);
 
-            if(isset($this->events['updated']))
-            {
-                event(new $this->events['updated']($object, $existing));
-            }
+            $this->fireEvent('updated', $object, $existing);
 
             if($with = $this->getWith($request))
             {
@@ -204,20 +173,6 @@ abstract class ResourceController extends BaseController
         }
 
         return $this->respondNotModified();
-    }
-
-    /**
-     * @param Model $object
-     * @return string
-     */
-    protected function getEtag($object)
-    {
-        if(in_array(VersionTracking::class, class_uses_recursive(get_class($object))))
-        {
-            return base64_encode($object->version);
-        }
-
-        return base64_encode($object->{$object->getUpdatedAtColumn()} ?: $object->{$object->getCreatedAtColumn()});
     }
 
     /**
@@ -236,61 +191,6 @@ abstract class ResourceController extends BaseController
     protected function getInputForUpdate(Request $request)
     {
         return $request->all();
-    }
-
-    /**
-     * @param Request $request
-     * @return string[]|null
-     */
-    protected function getFilter(Request $request)
-    {
-        $filter = [];
-
-        $input = filter_null($request->only($this->filterKeys));
-
-        if($input)
-        {
-            foreach ($input as $key => $value)
-            {
-                if (is_string($value) && strstr($value, ','))
-                {
-                    $value = filter_null(explode(',', $value));
-                }
-
-                $filter[$key] = $value;
-            }
-        }
-
-        return $filter ?: null;
-    }
-
-    /**
-     * @param Request $request
-     * @return string[]|null
-     */
-    protected function getWith(Request $request)
-    {
-        if ($request->has('with'))
-        {
-            if($with = $request->input('with'))
-            {
-                if(is_array($with) == false)
-                {
-                    $with = explode(',', $with);
-                }
-
-                if ($with = filter_null($with))
-                {
-                    return filter_null(array_map(function (&$e)
-                    {
-                        return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
-
-                    }, $with));
-                }
-            }
-        }
-
-        return null;
     }
 
     final protected function transform($item)

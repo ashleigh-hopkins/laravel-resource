@@ -1,9 +1,7 @@
 <?php namespace LaravelResource\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use LaravelResource\Database\Eloquent\VersionTracking;
 use LaravelResource\Repositories\Contracts\EntityRepository;
 use LaravelResource\Repositories\Contracts\PivotEntityRepository;
 use LaravelResource\Transformers\Contracts\Transformer;
@@ -11,7 +9,7 @@ use LaravelResource\Validators\Contracts\Validator;
 
 abstract class PivotController extends BaseController
 {
-    protected $events = [];
+    use ControllerHelper;
 
     /**
      * @var EntityRepository[]
@@ -23,10 +21,6 @@ abstract class PivotController extends BaseController
     protected $transformer;
 
     protected $validator;
-
-    protected $withRelations = [];
-
-    protected $filterKeys = [];
 
     public function __construct(PivotEntityRepository $repository,
                                 $parentRepositories,
@@ -52,17 +46,11 @@ abstract class PivotController extends BaseController
 
         $object = $this->repository->getForParent($id, $parentId);
 
-        if(isset($this->events['deleting']))
-        {
-            event(new $this->events['deleting']($object, $parentId));
-        }
+        $this->fireEvent('deleting', $object, $parentId);
 
         $this->repository->deleteForParent($object, $parentId);
 
-        if(isset($this->events['deleted']))
-        {
-            event(new $this->events['deleted']($object));
-        }
+        $this->fireEvent('deleted', $object, $parentId);
 
         return $this->respondNoContent();
     }
@@ -85,20 +73,7 @@ abstract class PivotController extends BaseController
             $query->with($with);
         }
 
-        if($filter = $this->getFilter($request))
-        {
-            foreach ($filter as $k => $v)
-            {
-                if(is_array($v))
-                {
-                    $query->whereIn($k, $v);
-                }
-                else
-                {
-                    $query->where($k, '=', $v);
-                }
-            }
-        }
+        $this->runFilter($request, $query);
 
         if($request->has('page_size') || $request->has('page'))
         {
@@ -191,17 +166,11 @@ abstract class PivotController extends BaseController
             }
             catch (ModelNotFoundException $e) {}
 
-            if(isset($this->events['updating']))
-            {
-                event(new $this->events['updating']($object, $parentId, $input));
-            }
+            $this->fireEvent('updating', $object, $parentId, $input);
 
             $object = $this->repository->updateForParent($id, $parentId, $input);
 
-            if(isset($this->events['updated']))
-            {
-                event(new $this->events['updated']($object, $parentId, $existing));
-            }
+            $this->fireEvent('updated', $object, $parentId, $existing);
 
             if($with = $this->getWith($request))
             {
@@ -213,20 +182,6 @@ abstract class PivotController extends BaseController
         }
 
         return $this->respondNotModified();
-    }
-
-    /**
-     * @param Model $object
-     * @return string
-     */
-    protected function getEtag($object)
-    {
-        if(in_array(VersionTracking::class, class_uses_recursive(get_class($object))))
-        {
-            return base64_encode($object->version);
-        }
-
-        return base64_encode($object->{$object->getUpdatedAtColumn()} ?: $object->{$object->getCreatedAtColumn()});
     }
 
     /**
@@ -245,61 +200,6 @@ abstract class PivotController extends BaseController
     protected function getInputForUpdate(Request $request, $parentIds)
     {
         return $request->all();
-    }
-
-    /**
-     * @param Request $request
-     * @return string[]|null
-     */
-    protected function getFilter(Request $request)
-    {
-        $filter = [];
-
-        $input = filter_null($request->only($this->filterKeys));
-
-        if($input)
-        {
-            foreach ($input as $key => $value)
-            {
-                if (is_string($value) && strstr($value, ','))
-                {
-                    $value = filter_null(explode(',', $value));
-                }
-
-                $filter[$key] = $value;
-            }
-        }
-
-        return $filter ?: null;
-    }
-
-    /**
-     * @param Request $request
-     * @return string[]|null
-     */
-    protected function getWith(Request $request)
-    {
-        if ($request->has('with'))
-        {
-            if($with = $request->input('with'))
-            {
-                if(is_array($with) == false)
-                {
-                    $with = explode(',', $with);
-                }
-
-                if ($with = filter_null($with))
-                {
-                    return filter_null(array_map(function (&$e)
-                    {
-                        return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
-
-                    }, $with));
-                }
-            }
-        }
-
-        return null;
     }
 
     final protected function transform($item)
