@@ -47,8 +47,8 @@ abstract class PivotController extends BaseController
         $args = func_get_args();
         $count = count($args);
 
-        $parentId = (int)$args[$count - 2];
-        $id = (int)$args[$count - 1];
+        $parentId = $args[$count - 2];
+        $id = $args[$count - 1];
 
         $object = $this->repository->getForParent($id, $parentId);
 
@@ -76,7 +76,7 @@ abstract class PivotController extends BaseController
         $args = func_get_args();
         $count = count($args);
 
-        $parentId = (int)$args[$count - 1];
+        $parentId = $args[$count - 1];
 
         $query = $this->repository->queryForParent($parentId);
 
@@ -125,8 +125,8 @@ abstract class PivotController extends BaseController
         $args = func_get_args();
         $count = count($args);
 
-        $parentId = (int)$args[$count - 2];
-        $id = (int)$args[$count - 1];
+        $parentId = $args[$count - 2];
+        $id = $args[$count - 1];
 
         $object = $this->repository->getForParent($id, $parentId);
 
@@ -167,8 +167,8 @@ abstract class PivotController extends BaseController
         array_shift($args);
         $count = count($args);
 
-        $parentId = (int)$args[$count - 2];
-        $id = (int)array_pop($args);
+        $parentId = $args[$count - 2];
+        $id = array_pop($args);
 
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all(), $args) : null;
 

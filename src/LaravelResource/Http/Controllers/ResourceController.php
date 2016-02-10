@@ -168,8 +168,6 @@ abstract class ResourceController extends BaseController
      */
     public function update($id, Request $request) // PUT
     {
-        $id = (int)$id;
-
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all()) : null;
 
         if($validator && $validator->fails())
