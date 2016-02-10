@@ -77,7 +77,7 @@ abstract class NestedResourceController extends BaseController
 
         $parentId = $args[$count - 1];
 
-        $query = $this->repository->queryForParent($parentId);
+        $query = property_exists($this, 'query') ? $this->query : $this->repository->queryForParent($parentId);
 
         if($with = $this->getWith($request))
         {
