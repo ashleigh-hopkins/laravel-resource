@@ -88,10 +88,7 @@ trait ControllerHelper
                         $value = filter_null(explode(',', $value));
                     }
 
-                    if ($value)
-                    {
-                        $filter[] = [$key, $operator, $value];
-                    }
+                    $filter[] = [$key, $operator, $value];
                 }
             }
         }
