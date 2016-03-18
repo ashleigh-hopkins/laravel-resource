@@ -46,11 +46,11 @@ abstract class PivotController extends BaseController
 
         $object = $this->repository->getForParent($id, $parentId);
 
-        $this->fireEvent('deleting', $object, $parentId);
+        $this->fireEvent('deleting', $object, $parentId, $id);
 
         $this->repository->deleteForParent($object, $parentId);
 
-        $this->fireEvent('deleted', $object, $parentId);
+        $this->fireEvent('deleted', $object, $parentId, $id);
 
         return $this->respondNoContent();
     }
@@ -134,12 +134,8 @@ abstract class PivotController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request) // PUT
+    public function update(Request $request, ...$args) // PUT
     {
-        $args = func_get_args();
-
-        // remove $request
-        array_shift($args);
         $count = count($args);
 
         $parentId = $args[$count - 2];
@@ -166,11 +162,11 @@ abstract class PivotController extends BaseController
             }
             catch (ModelNotFoundException $e) {}
 
-            $this->fireEvent('updating', $object, $parentId, $input);
+            $this->fireEvent('updating', $object, $parentId, $id, $input);
 
             $object = $this->repository->updateForParent($id, $parentId, $input);
 
-            $this->fireEvent('updated', $object, $parentId, $existing);
+            $this->fireEvent('updated', $object, $parentId, $id, $existing);
 
             if($with = $this->getWith($request))
             {

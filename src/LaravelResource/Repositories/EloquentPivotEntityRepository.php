@@ -61,9 +61,25 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      */
     public function getForParent($id, $parent)
     {
+        $parent = $this->getParentModel($parent);
+
         $relation = $parent->{$this->relation}();
 
         return $this->queryForParent($parent)->where([$relation->getOtherKey() => $id])->firstOrFail();
+    }
+
+    /**
+     * @param $id
+     * @param object|Model $parent
+     * @return object|Model
+     */
+    public function getForParentPivot($id, $parent)
+    {
+        $parent = $this->getParentModel($parent);
+
+        $relation = $parent->{$this->relation}();
+
+        return $relation->where([$relation->getOtherKey() => $id])->firstOrFail();
     }
 
     /**
@@ -85,6 +101,17 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         $parent = $this->getParentModel($parent);
 
         return $parent->{$this->relationRaw}()->newQuery();
+    }
+
+    /**
+     * @param object|Model $parent
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public function queryForParentPivot($parent)
+    {
+        $parent = $this->getParentModel($parent);
+
+        return $parent->{$this->relation}()->newQuery();
     }
 
     /**
@@ -141,7 +168,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
     {
         if ($mixed instanceof Model == false)
         {
-            if(is_numeric($mixed) == false)
+            if(is_scalar($mixed) == false)
             {
                 $mixed = data_get($mixed, 'id');
             }

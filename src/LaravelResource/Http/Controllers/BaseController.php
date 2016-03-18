@@ -102,6 +102,16 @@ abstract class BaseController extends IlluminateController
      * @param array $headers
      * @return \Illuminate\Http\JsonResponse
      */
+    protected function respondForbidden($error = ['http' => ['error.http.403']], $headers = [])
+    {
+        return $this->setStatusCode(SymfonyResponse::HTTP_FORBIDDEN)->respondWithError($error, $headers);
+    }
+
+    /**
+     * @param array $error
+     * @param array $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
     protected function respondNotFound($error = ['http' => ['error.http.404']], $headers = [])
     {
         return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->respondWithError($error, $headers);

@@ -25,6 +25,13 @@ interface PivotEntityRepository extends EntityRepository
     public function getForParent($id, $parent);
 
     /**
+     * @param $id
+     * @param object|Model $parent
+     * @return object|Model
+     */
+    public function getForParentPivot($id, $parent);
+
+    /**
      * @param int|object|Model $parent
      * @param int $perPage
      * @return \Illuminate\Pagination\Paginator
@@ -36,6 +43,12 @@ interface PivotEntityRepository extends EntityRepository
      * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
      */
     public function queryForParent($parent);
+
+    /**
+     * @param int|object|Model $parent
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public function queryForParentPivot($parent);
 
     /**
      * @param int|object|Model $object

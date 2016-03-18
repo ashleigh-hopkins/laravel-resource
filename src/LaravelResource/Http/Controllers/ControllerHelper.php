@@ -20,14 +20,13 @@ trait ControllerHelper
 
     protected $withRelations = [];
 
-    protected function fireEvent($type)
+    protected function fireEvent($type, &...$args)
     {
         if(isset($this->events[$type]))
         {
-            $args = func_get_args();
-            array_shift($args); // shift off the type
+            $reflectionClass = new \ReflectionClass($this->events[$type]);
 
-            event(app($this->events[$type], $args));
+            event($reflectionClass->newInstanceArgs($args));
         }
     }
 

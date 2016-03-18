@@ -38,7 +38,7 @@ abstract class ResourceController extends BaseController
 
         $this->fireEvent('deleting', $object);
 
-        $this->repository->delete($id);
+        $this->repository->delete($object);
 
         $this->fireEvent('deleted', $object);
 
@@ -83,7 +83,7 @@ abstract class ResourceController extends BaseController
      */
     public function show($id, Request $request)
     {
-        $object = $this->repository->get($id);
+        $object = property_exists($this, 'object') ? $this->object : $this->repository->get($id);
 
         if($with = $this->getWith($request))
         {
