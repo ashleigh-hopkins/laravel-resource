@@ -25,7 +25,7 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         $query = $this->queryForParent($parent);
 
-        return $query->all();
+        return $query->get();
     }
 
     /**
