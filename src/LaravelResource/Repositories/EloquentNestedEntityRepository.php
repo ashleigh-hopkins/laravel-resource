@@ -125,7 +125,7 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         if ($mixed instanceof Model == false)
         {
-            if(is_string($mixed) == false)
+            if(is_scalar($mixed) == false)
             {
                 $mixed = data_get($mixed, 'id');
             }
