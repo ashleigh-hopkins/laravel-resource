@@ -34,7 +34,7 @@ abstract class ResourceController extends BaseController
      */
     public function destroy($id) // DELETE
     {
-        $object = $this->repository->get($id);
+        $object = property_exists($this, 'object') ? $this->object : $this->repository->get($id);
 
         $this->fireEvent('deleting', $object);
 
