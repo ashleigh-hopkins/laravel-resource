@@ -154,7 +154,7 @@ abstract class ResourceController extends BaseController
 
         if($input !== null)
         {
-            $object = $this->repository->get($id);
+            $object = property_exists($this, 'object') ? $this->object : $this->repository->get($id);
 
             $this->fireEvent('updating', $object, $input);
 

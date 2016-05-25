@@ -50,7 +50,7 @@ abstract class NestedResourceController extends BaseController
         $parentId = $args[$count - 2];
         $id = $args[$count - 1];
 
-        $object = $this->repository->getForParent($id, $parentId);
+        $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
         $this->fireEvent('deleting', $object, $parentId);
 
@@ -109,7 +109,7 @@ abstract class NestedResourceController extends BaseController
         $parentId = $args[$count - 2];
         $id = $args[$count - 1];
 
-        $object = $this->repository->getForParent($id, $parentId);
+        $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
         if($with = $this->getWith($request))
         {
