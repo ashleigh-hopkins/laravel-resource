@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use LaravelResource\Database\Eloquent\VersionTracking;
 
 trait ControllerHelper
@@ -41,7 +42,45 @@ trait ControllerHelper
             return base64_encode($object->version);
         }
 
-        return base64_encode($object->{$object->getUpdatedAtColumn()} ?: $object->{$object->getCreatedAtColumn()});
+        if(($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn()))
+        {
+            return base64_encode(sha1($object->{$column}, true));
+        }
+
+        return null;
+    }
+
+    /**
+     * @param Collection|Model[] $objects
+     * @return string
+     */
+    protected function getCollectionEtag($objects)
+    {
+        if($objects == [])
+        {
+            return null;
+        }
+        
+        $data = '';
+        
+        foreach($objects as $object)
+        {
+            $key = $object->getKey();
+            
+            if(in_array(VersionTracking::class, class_uses_recursive(get_class($object))))
+            {
+                $data .= "$key:{$object->version};";
+            }
+            else
+            {
+                if(($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn()))
+                {
+                    $data .= "$key:{$object->{$column}};";
+                }
+            }
+        }
+
+        return base64_encode(sha1($data, true));
     }
 
     /**

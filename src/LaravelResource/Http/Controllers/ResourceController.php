@@ -71,9 +71,15 @@ abstract class ResourceController extends BaseController
             $items = $query->get();
         }
 
-        return $this->respondSuccess(
-            $this->transformCollection($items)
-        );
+        $remoteEtag = $request->header('If-None-Match');
+        $etag = $this->getCollectionEtag($items);
+
+        if($remoteEtag === null || $remoteEtag != $etag)
+        {
+            return $this->respondSuccess($this->transformCollection($items), ['ETag' => $etag]);
+        }
+
+        return $this->respondNotModified();
     }
 
     /**

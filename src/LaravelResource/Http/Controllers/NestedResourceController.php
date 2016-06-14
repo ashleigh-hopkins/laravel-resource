@@ -92,9 +92,15 @@ abstract class NestedResourceController extends BaseController
             $items = $query->get();
         }
 
-        return $this->respondSuccess(
-            $this->transformCollection($items)
-        );
+        $remoteEtag = $request->header('If-None-Match');
+        $etag = $this->getCollectionEtag($items);
+
+        if($remoteEtag === null || $remoteEtag != $etag)
+        {
+            return $this->respondSuccess($this->transformCollection($items), ['ETag' => $etag]);
+        }
+
+        return $this->respondNotModified();
     }
 
     /**
@@ -174,12 +180,8 @@ abstract class NestedResourceController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request) // PUT
+    public function update(Request $request, ...$args) // PUT
     {
-        $args = func_get_args();
-
-        // remove $request
-        array_shift($args);
         $count = count($args);
 
         $parentId = $args[$count - 2];
