@@ -37,11 +37,6 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         $parent = $this->getParentModel($parent);
 
-        if($this->isVersionTracking($this->model))
-        {
-            $input += ['version' => 0];
-        }
-
         return $parent->{$this->relation}()->create($input);
     }
 

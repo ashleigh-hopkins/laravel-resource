@@ -29,11 +29,6 @@ abstract class EloquentEntityRepository
      */
     public function create($input)
     {
-        if($this->isVersionTracking($this->model))
-        {
-            $input += ['version' => 0];
-        }
-
         return $this->model->create($input);
     }
 
@@ -95,15 +90,6 @@ abstract class EloquentEntityRepository
         }
 
         $object->fill($input);
-
-        if($this->isVersionTracking($this->model))
-        {
-            if ($object->isDirty() && isset($object->version))
-            {
-                $object->version++;
-            }
-        }
-
         $object->save();
 
         return $object;
