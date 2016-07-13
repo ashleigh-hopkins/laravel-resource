@@ -1,7 +1,6 @@
 <?php namespace LaravelResource\Repositories;
 
 use Illuminate\Database\Eloquent\Model;
-use LaravelResource\Database\Eloquent\VersionTracking;
 
 abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
 {
@@ -31,6 +30,34 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
 
     /**
      * @param object|Model $parent
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public function queryForParent($parent)
+    {
+        $parent = $this->getParentModel($parent);
+
+        return $parent->{$this->relationRaw}()->newQuery();
+    }
+
+    /**
+     * @param int|object|array|Model $mixed
+     * @return Model
+     */
+    protected function getParentModel($mixed)
+    {
+        if ($mixed instanceof Model == false) {
+            if (is_scalar($mixed) == false) {
+                $mixed = data_get($mixed, 'id');
+            }
+
+            return $this->parentModel->newInstance(['id' => $mixed], true);
+        }
+
+        return $mixed;
+    }
+
+    /**
+     * @param object|Model $parent
      * @param int|object|Model $object
      * @return Model
      */
@@ -38,8 +65,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
     {
         $parent = $this->getParentModel($parent);
 
-        if($object instanceof Model == false)
-        {
+        if ($object instanceof Model == false) {
             $object = $this->getForParent($object, $parent);
         }
 
@@ -96,17 +122,6 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      * @param object|Model $parent
      * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
      */
-    public function queryForParent($parent)
-    {
-        $parent = $this->getParentModel($parent);
-
-        return $parent->{$this->relationRaw}()->newQuery();
-    }
-
-    /**
-     * @param object|Model $parent
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
-     */
     public function queryForParentPivot($parent)
     {
         $parent = $this->getParentModel($parent);
@@ -127,12 +142,11 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         $relation = $parent->{$this->relation}();
 
         $pivot = $this->model->where([
-                $relation->getForeignKey() => $parent->id,
-                $relation->getOtherKey() => $object,
-            ])->first();
+            $relation->getForeignKey() => $parent->id,
+            $relation->getOtherKey() => $object,
+        ])->first();
 
-        if($pivot === null)
-        {
+        if ($pivot === null) {
             $relation->attach($object, $input + ['version' => 0]);
 
             return $this->model->where([
@@ -143,13 +157,10 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
 
         $pivot->fill($input);
 
-        if($pivot->isDirty())
-        {
+        if ($pivot->isDirty()) {
             // hack to get version tracking working
-            if ($this->isVersionTracking($this->model))
-            {
-                if (isset($pivot->version))
-                {
+            if ($this->isVersionTracking($this->model)) {
+                if (isset($pivot->version)) {
                     $input = ['version' => ++$pivot->version] + $input;
                 }
             }
@@ -158,24 +169,5 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         }
 
         return $pivot;
-    }
-
-    /**
-     * @param int|object|array|Model $mixed
-     * @return Model
-     */
-    protected function getParentModel($mixed)
-    {
-        if ($mixed instanceof Model == false)
-        {
-            if(is_scalar($mixed) == false)
-            {
-                $mixed = data_get($mixed, 'id');
-            }
-
-            return $this->parentModel->newInstance(['id' => $mixed], true);
-        }
-
-        return $mixed;
     }
 }

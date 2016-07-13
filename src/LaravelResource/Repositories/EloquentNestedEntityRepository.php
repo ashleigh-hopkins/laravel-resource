@@ -1,7 +1,6 @@
 <?php namespace LaravelResource\Repositories;
 
 use Illuminate\Database\Eloquent\Model;
-use LaravelResource\Database\Eloquent\VersionTracking;
 
 abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
 {
@@ -29,6 +28,34 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     }
 
     /**
+     * @param object|Model $parent
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public function queryForParent($parent)
+    {
+        $parent = $this->getParentModel($parent);
+
+        return $parent->{$this->relation}()->newQuery();
+    }
+
+    /**
+     * @param int|object|array|Model $mixed
+     * @return Model
+     */
+    protected function getParentModel($mixed)
+    {
+        if ($mixed instanceof Model == false) {
+            if (is_scalar($mixed) == false) {
+                $mixed = data_get($mixed, 'id');
+            }
+
+            return $this->parentModel->newInstance(['id' => $mixed], true);
+        }
+
+        return $mixed;
+    }
+
+    /**
      * @param array $input
      * @param object|Model $parent
      * @return object|Model
@@ -49,8 +76,7 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         $parent = $this->getParentModel($parent);
 
-        if($object instanceof Model == false)
-        {
+        if ($object instanceof Model == false) {
             $object = $this->getForParent($object, $parent);
         }
 
@@ -84,17 +110,6 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     }
 
     /**
-     * @param object|Model $parent
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
-     */
-    public function queryForParent($parent)
-    {
-        $parent = $this->getParentModel($parent);
-
-        return $parent->{$this->relation}()->newQuery();
-    }
-
-    /**
      * @param int|object|Model $object
      * @param object|Model $parent
      * @param array $input
@@ -104,30 +119,10 @@ abstract class EloquentNestedEntityRepository extends EloquentEntityRepository
     {
         $parent = $this->getParentModel($parent);
 
-        if($object instanceof Model == false)
-        {
+        if ($object instanceof Model == false) {
             $object = $this->getForParent($object, $parent);
         }
 
         return parent::update($object, $input);
-    }
-
-    /**
-     * @param int|object|array|Model $mixed
-     * @return Model
-     */
-    protected function getParentModel($mixed)
-    {
-        if ($mixed instanceof Model == false)
-        {
-            if(is_scalar($mixed) == false)
-            {
-                $mixed = data_get($mixed, 'id');
-            }
-
-            return $this->parentModel->newInstance(['id' => $mixed], true);
-        }
-
-        return $mixed;
     }
 }

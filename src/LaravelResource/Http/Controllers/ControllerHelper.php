@@ -23,8 +23,7 @@ trait ControllerHelper
 
     protected function fireEvent($type, &...$args)
     {
-        if(isset($this->events[$type]))
-        {
+        if (isset($this->events[$type])) {
             $reflectionClass = new \ReflectionClass($this->events[$type]);
 
             event($reflectionClass->newInstanceArgs($args));
@@ -37,13 +36,11 @@ trait ControllerHelper
      */
     protected function getEtag($object)
     {
-        if(in_array(VersionTracking::class, class_uses_recursive(get_class($object))))
-        {
+        if (in_array(VersionTracking::class, class_uses_recursive(get_class($object)))) {
             return base64_encode($object->version);
         }
 
-        if(($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn()))
-        {
+        if (($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn())) {
             return base64_encode(sha1($object->{$column}, true));
         }
 
@@ -56,25 +53,19 @@ trait ControllerHelper
      */
     protected function getCollectionEtag($objects)
     {
-        if($objects == [])
-        {
+        if ($objects == []) {
             return null;
         }
-        
+
         $data = '';
-        
-        foreach($objects as $object)
-        {
+
+        foreach ($objects as $object) {
             $key = $object->getKey();
-            
-            if(in_array(VersionTracking::class, class_uses_recursive(get_class($object))))
-            {
+
+            if (in_array(VersionTracking::class, class_uses_recursive(get_class($object)))) {
                 $data .= "$key:{$object->version};";
-            }
-            else
-            {
-                if(($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn()))
-                {
+            } else {
+                if (($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn())) {
                     $data .= "$key:{$object->{$column}};";
                 }
             }
@@ -91,38 +82,29 @@ trait ControllerHelper
     {
         $filter = [];
 
-        if($this->filterKeys)
-        {
+        if ($this->filterKeys) {
             $input = $request->all();
 
-            foreach ($input as $key => $value)
-            {
+            foreach ($input as $key => $value) {
                 $operator = '=';
                 $value = $request->input($key);
 
-                if (strpos($key, ':') !== false)
-                {
+                if (strpos($key, ':') !== false) {
                     list($key, $operator) = explode(':', $key);
 
-                    if(isset($this->operatorMappings[$operator]))
-                    {
+                    if (isset($this->operatorMappings[$operator])) {
                         $operator = $this->operatorMappings[$operator];
-                    }
-                    else
-                    {
+                    } else {
                         $operator = '=';
                     }
                 }
 
-                if (in_array($key, $this->filterKeys))
-                {
-                    if ($value == 'null')
-                    {
+                if (in_array($key, $this->filterKeys)) {
+                    if ($value == 'null') {
                         $value = null;
                     }
 
-                    if (is_string($value) && strstr($value, ','))
-                    {
+                    if (is_string($value) && strstr($value, ',')) {
                         $value = filter_null(explode(',', $value));
                     }
 
@@ -140,19 +122,14 @@ trait ControllerHelper
      */
     protected function getWith(Request $request)
     {
-        if ($request->has('with'))
-        {
-            if($with = $request->input('with'))
-            {
-                if(is_array($with) == false)
-                {
+        if ($request->has('with')) {
+            if ($with = $request->input('with')) {
+                if (is_array($with) == false) {
                     $with = explode(',', $with);
                 }
 
-                if ($with = filter_null($with))
-                {
-                    return filter_null(array_map(function (&$e)
-                    {
+                if ($with = filter_null($with)) {
+                    return filter_null(array_map(function(&$e) {
                         return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
 
                     }, $with));
@@ -169,18 +146,13 @@ trait ControllerHelper
      */
     protected function runFilter(Request $request, $query)
     {
-        if ($filter = $this->getFilter($request))
-        {
-            foreach ($filter as $v)
-            {
+        if ($filter = $this->getFilter($request)) {
+            foreach ($filter as $v) {
                 list($key, $operator, $value) = $v;
 
-                if (is_array($value) || $operator == 'in')
-                {
+                if (is_array($value) || $operator == 'in') {
                     $query->whereIn($key, (array)$value);
-                }
-                else
-                {
+                } else {
                     $query->where($key, $operator, $value);
                 }
             }

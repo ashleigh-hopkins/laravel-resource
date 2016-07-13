@@ -3,7 +3,8 @@
 use Illuminate\Contracts\Pagination\Paginator;
 use LaravelResource\Transformers\Contracts\Transformer;
 
-class PaginatorTransformer extends AbstractTransformer implements Transformer {
+class PaginatorTransformer extends AbstractTransformer implements Transformer
+{
 
     /**
      * @param Paginator $data

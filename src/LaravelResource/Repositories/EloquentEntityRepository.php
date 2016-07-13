@@ -24,6 +24,14 @@ abstract class EloquentEntityRepository
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function query()
+    {
+        return $this->model->newQuery();
+    }
+
+    /**
      * @param array $input
      * @return Model
      */
@@ -39,8 +47,7 @@ abstract class EloquentEntityRepository
      */
     public function delete($object)
     {
-        if($object instanceof Model == false)
-        {
+        if ($object instanceof Model == false) {
             $object = $this->get($object);
         }
 
@@ -69,14 +76,6 @@ abstract class EloquentEntityRepository
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function query()
-    {
-        return $this->model->newQuery();
-    }
-
-    /**
      * @param int|Model $object
      * @param array $input
      * @return Model
@@ -84,8 +83,7 @@ abstract class EloquentEntityRepository
      */
     public function update($object, $input)
     {
-        if($object instanceof Model == false)
-        {
+        if ($object instanceof Model == false) {
             $object = $this->get($object);
         }
 

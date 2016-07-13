@@ -2,7 +2,8 @@
 
 use Illuminate\Support\ServiceProvider;
 
-class ResourceServiceProvider extends ServiceProvider {
+class ResourceServiceProvider extends ServiceProvider
+{
 
 	/**
 	 * Indicates if loading of the provider is deferred.
@@ -13,7 +14,7 @@ class ResourceServiceProvider extends ServiceProvider {
 
 	/**
 	 * Boot the application events.
-	 * 
+	 *
 	 * @return void
 	 */
 	public function boot()
@@ -26,7 +27,7 @@ class ResourceServiceProvider extends ServiceProvider {
 	 * @return void
 	 */
 	public function register()
-	{		
+	{
 		//
 	}
 
@@ -37,7 +38,7 @@ class ResourceServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return array();
+		return [];
 	}
 
 }

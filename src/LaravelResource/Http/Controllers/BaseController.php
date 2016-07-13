@@ -21,25 +21,20 @@ abstract class BaseController extends IlluminateController
      */
     protected function respond($data, $headers = [])
     {
-        if ($this->paginator)
-        {
+        if ($this->paginator) {
             $data['meta'] = app(PaginatorTransformer::class)->item($this->paginator);
         }
 
-        if(\App::environment('production') == false)
-        {
+        if (\App::environment('production') == false) {
             $queries = \DB::getQueryLog();
-            if($queries)
-            {
+            if ($queries) {
                 $data += ['queries' => $queries];
             }
 
-            if(class_exists('RestModel\Database\Rest\Client'))
-            {
+            if (class_exists('RestModel\Database\Rest\Client')) {
                 $requests = \RestModel\Database\Rest\Client::getRequestLog();
 
-                if($requests)
-                {
+                if ($requests) {
                     $data += ['restRequests' => $requests];
                 }
             }

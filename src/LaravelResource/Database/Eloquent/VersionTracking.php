@@ -10,8 +10,7 @@ trait VersionTracking
             if (count($dirty) > 0) {
                 $this->version++;
             }
-        }
-        else {
+        } else {
             $this->version = 0;
         }
 

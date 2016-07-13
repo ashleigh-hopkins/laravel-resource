@@ -23,6 +23,7 @@ abstract class NestedResourceController extends BaseController
 
     /**
      * NestedResourceController constructor.
+     *
      * @param NestedEntityRepository $repository
      * @param $parentRepositories
      * @param Transformer $transformer
@@ -74,29 +75,24 @@ abstract class NestedResourceController extends BaseController
 
         $query = property_exists($this, 'query') ? $this->query : $this->repository->queryForParent($parentId);
 
-        if($with = $this->getWith($request))
-        {
+        if ($with = $this->getWith($request)) {
             $query->with($with);
         }
 
         $this->runFilter($request, $query);
 
-        if($request->has('page_size') || $request->has('page'))
-        {
+        if ($request->has('page_size') || $request->has('page')) {
             $this->setPaginator($pagination = $query->paginate((int)$request->input('page_size')));
 
             $items = $pagination->items();
-        }
-        else
-        {
+        } else {
             $items = $query->get();
         }
 
         $remoteEtag = $request->header('If-None-Match');
         $etag = $this->getCollectionEtag($items);
 
-        if($remoteEtag === null || $remoteEtag != $etag)
-        {
+        if ($remoteEtag === null || $remoteEtag != $etag) {
             return $this->respondSuccess($this->transformCollection($items), ['ETag' => $etag]);
         }
 
@@ -117,16 +113,14 @@ abstract class NestedResourceController extends BaseController
 
         $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
-        if($with = $this->getWith($request))
-        {
+        if ($with = $this->getWith($request)) {
             $object->load($with);
         }
 
         $remoteEtag = $request->header('If-None-Match');
         $etag = $this->getEtag($object);
 
-        if($remoteEtag === null || $remoteEtag != $etag)
-        {
+        if ($remoteEtag === null || $remoteEtag != $etag) {
             return $this->respondSuccess($this->transform($object), ['ETag' => $etag]);
         }
 
@@ -149,23 +143,20 @@ abstract class NestedResourceController extends BaseController
 
         $validator = $this->validator ? $this->validator->forStore($request->all(), $args) : null;
 
-        if($validator && $validator->fails())
-        {
+        if ($validator && $validator->fails()) {
             return $this->respondUnprocessableEntity($validator->messages());
         }
 
         $input = $this->getInputForStore($request, $args);
 
-        if($input !== null)
-        {
+        if ($input !== null) {
             $this->fireEvent('creating', $input, $parentId);
 
             $object = $this->repository->createForParent($input, $parentId);
 
             $this->fireEvent('created', $object, $parentId);
 
-            if($with = $this->getWith($request))
-            {
+            if ($with = $this->getWith($request)) {
                 $object->load($with);
             }
 
@@ -189,15 +180,13 @@ abstract class NestedResourceController extends BaseController
 
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all(), $args) : null;
 
-        if($validator && $validator->fails())
-        {
+        if ($validator && $validator->fails()) {
             return $this->respondUnprocessableEntity($validator->messages());
         }
 
         $input = $this->getInputForUpdate($request, $args);
 
-        if($input !== null)
-        {
+        if ($input !== null) {
             $object = $this->repository->getForParent($id, $parentId);
 
             $this->fireEvent('updating', $object, $parentId, $input);
@@ -207,8 +196,7 @@ abstract class NestedResourceController extends BaseController
 
             $this->fireEvent('updated', $object, $parentId, $existing);
 
-            if($with = $this->getWith($request))
-            {
+            if ($with = $this->getWith($request)) {
                 $object->load($with);
             }
 

@@ -17,6 +17,7 @@ abstract class ResourceController extends BaseController
 
     /**
      * ResourceController constructor.
+     *
      * @param EntityRepository $repository
      * @param Transformer $transformer
      * @param Validator|null $validator
@@ -53,29 +54,24 @@ abstract class ResourceController extends BaseController
     {
         $query = property_exists($this, 'query') ? $this->query : $this->repository->query();
 
-        if($with = $this->getWith($request))
-        {
+        if ($with = $this->getWith($request)) {
             $query->with($with);
         }
 
         $this->runFilter($request, $query);
 
-        if($request->has('page_size') || $request->has('page'))
-        {
+        if ($request->has('page_size') || $request->has('page')) {
             $this->setPaginator($pagination = $query->paginate((int)$request->input('page_size')));
 
             $items = $pagination->items();
-        }
-        else
-        {
+        } else {
             $items = $query->get();
         }
 
         $remoteEtag = $request->header('If-None-Match');
         $etag = $this->getCollectionEtag($items);
 
-        if($remoteEtag === null || $remoteEtag != $etag)
-        {
+        if ($remoteEtag === null || $remoteEtag != $etag) {
             return $this->respondSuccess($this->transformCollection($items), ['ETag' => $etag]);
         }
 
@@ -91,16 +87,14 @@ abstract class ResourceController extends BaseController
     {
         $object = property_exists($this, 'object') ? $this->object : $this->repository->get($id);
 
-        if($with = $this->getWith($request))
-        {
+        if ($with = $this->getWith($request)) {
             $object->load($with);
         }
 
         $remoteEtag = $request->header('If-None-Match');
         $etag = $this->getEtag($object);
 
-        if($remoteEtag === null || $remoteEtag != $etag)
-        {
+        if ($remoteEtag === null || $remoteEtag != $etag) {
             return $this->respondSuccess($this->transform($object), ['ETag' => $etag]);
         }
 
@@ -115,23 +109,20 @@ abstract class ResourceController extends BaseController
     {
         $validator = $this->validator ? $this->validator->forStore($request->all()) : null;
 
-        if($validator && $validator->fails())
-        {
+        if ($validator && $validator->fails()) {
             return $this->respondUnprocessableEntity($validator->messages());
         }
 
         $input = $this->getInputForStore($request);
 
-        if($input !== null)
-        {
+        if ($input !== null) {
             $this->fireEvent('creating', $input);
 
             $object = $this->repository->create($input);
 
             $this->fireEvent('created', $object);
 
-            if($with = $this->getWith($request))
-            {
+            if ($with = $this->getWith($request)) {
                 $object->load($with);
             }
 
@@ -151,15 +142,13 @@ abstract class ResourceController extends BaseController
     {
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all()) : null;
 
-        if($validator && $validator->fails())
-        {
+        if ($validator && $validator->fails()) {
             return $this->respondUnprocessableEntity($validator->messages());
         }
 
         $input = $this->getInputForUpdate($request);
 
-        if($input !== null)
-        {
+        if ($input !== null) {
             $object = property_exists($this, 'object') ? $this->object : $this->repository->get($id);
 
             $this->fireEvent('updating', $object, $input);
@@ -169,8 +158,7 @@ abstract class ResourceController extends BaseController
 
             $this->fireEvent('updated', $object, $existing);
 
-            if($with = $this->getWith($request))
-            {
+            if ($with = $this->getWith($request)) {
                 $object->load($with);
             }
 
