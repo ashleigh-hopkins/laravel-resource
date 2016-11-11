@@ -93,6 +93,11 @@ abstract class EloquentEntityRepository
         return $object;
     }
 
+    public function model()
+    {
+        return $this->model;
+    }
+
     protected function isVersionTracking($object)
     {
         return in_array(VersionTracking::class, class_uses_recursive(get_class($object)));
