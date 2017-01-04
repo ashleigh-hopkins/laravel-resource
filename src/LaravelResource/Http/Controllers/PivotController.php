@@ -90,14 +90,7 @@ abstract class PivotController extends BaseController
             $items = $query->get();
         }
 
-        $remoteEtag = $request->header('If-None-Match');
-        $etag = $this->getCollectionEtag($items);
-
-        if ($remoteEtag === null || $remoteEtag != $etag) {
-            return $this->respondSuccess($this->transformCollection($items), ['ETag' => $etag]);
-        }
-
-        return $this->respondNotModified();
+        return $this->respondSuccess($this->transformCollection($items));
     }
 
     /**
@@ -118,14 +111,7 @@ abstract class PivotController extends BaseController
             $object->load($with);
         }
 
-        $remoteEtag = $request->header('If-None-Match');
-        $etag = $this->getEtag($object);
-
-        if ($remoteEtag === null || $remoteEtag != $etag) {
-            return $this->respondSuccess($this->transform($object), ['ETag' => $etag]);
-        }
-
-        return $this->respondNotModified();
+        return $this->respondSuccess($this->transform($object));
     }
 
     /**
@@ -176,11 +162,10 @@ abstract class PivotController extends BaseController
                 $object->load($with);
             }
 
-            return $this->respondSuccess(
-                $this->transform($object), ['Etag' => $this->getEtag($object)]);
+            return $this->respondSuccess($this->transform($object));
         }
 
-        return $this->respondNotModified();
+        return $this->respondBadRequest();
     }
 
     /**

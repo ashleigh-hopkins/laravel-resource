@@ -9,6 +9,8 @@ trait ControllerHelper
 {
     protected $events = [];
 
+    protected $filterCache = null;
+
     protected $filterKeys = [];
 
     protected $operatorMappings = [
@@ -31,89 +33,66 @@ trait ControllerHelper
     }
 
     /**
-     * @param Model $object
-     * @return string
-     */
-    protected function getEtag($object)
-    {
-        if (in_array(VersionTracking::class, class_uses_recursive(get_class($object)))) {
-            return base64_encode($object->version);
-        }
-
-        if (($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn())) {
-            return base64_encode(sha1($object->{$column}, true));
-        }
-
-        return null;
-    }
-
-    /**
-     * @param Collection|Model[] $objects
-     * @return string
-     */
-    protected function getCollectionEtag($objects)
-    {
-        if ($objects == []) {
-            return null;
-        }
-
-        $data = '';
-
-        foreach ($objects as $object) {
-            $key = $object->getKey();
-
-            if (in_array(VersionTracking::class, class_uses_recursive(get_class($object)))) {
-                $data .= "$key:{$object->version};";
-            } else {
-                if (($column = $object->getUpdatedAtColumn()) || ($column = $object->getCreatedAtColumn())) {
-                    $data .= "$key:{$object->{$column}};";
-                }
-            }
-        }
-
-        return base64_encode(sha1($data, true));
-    }
-
-    /**
      * @param Request $request
      * @return string[]|null
      */
     protected function getFilter(Request $request)
     {
-        $filter = [];
-
-        if ($this->filterKeys) {
-            $input = $request->all();
-
-            foreach ($input as $key => $value) {
-                $operator = '=';
-                $value = $request->input($key);
-
-                if (strpos($key, ':') !== false) {
-                    list($key, $operator) = explode(':', $key);
-
-                    if (isset($this->operatorMappings[$operator])) {
-                        $operator = $this->operatorMappings[$operator];
-                    } else {
-                        $operator = '=';
-                    }
-                }
-
-                if (in_array($key, $this->filterKeys)) {
-                    if ($value == 'null') {
-                        $value = null;
-                    }
-
-                    if (is_string($value) && strstr($value, ',')) {
-                        $value = filter_null(explode(',', $value));
-                    }
-
-                    $filter[] = [$key, $operator, $value];
-                }
-            }
+        // try to return a cached version
+        if($this->filterCache !== null) {
+            return $this->filterCache;
         }
 
-        return $filter ?: null;
+        // user didn't define any filter keys so no processing will happen
+        if ($this->filterKeys == []) {
+            return null;
+        }
+
+        $filter = [];
+
+        $input = $request->all();
+
+        foreach ($input as $key => $value) {
+            $operator = '=';
+            $value = $request->input($key);
+
+            if (strpos($key, ':') !== false) {
+                list($key, $operator) = explode(':', $key);
+
+                if (isset($this->operatorMappings[$operator])) {
+                    $operator = $this->operatorMappings[$operator];
+                } else {
+                    $operator = '=';
+                }
+            }
+
+            if (in_array($key, $this->filterKeys) == false) {
+                continue;
+            }
+
+            if ($value == 'null') {
+                $value = null;
+            }
+
+            if (is_string($value) && strstr($value, ',')) {
+                $value = filter_null(explode(',', $value));
+            }
+
+            $filter[] = [$key, $operator, $value];
+        }
+
+        if($filter) {
+            usort($filter, function ($a, $b) {
+                return strcmp($a[0], $b[0]);
+            });
+
+            // cache result
+            $this->filterCache = $filter;
+
+            return $this->filterCache;
+        }
+
+        return null;
     }
 
     /**
@@ -122,22 +101,31 @@ trait ControllerHelper
      */
     protected function getWith(Request $request)
     {
-        if ($request->has('with')) {
-            if ($with = $request->input('with')) {
-                if (is_array($with) == false) {
-                    $with = explode(',', $with);
-                }
-
-                if ($with = filter_null($with)) {
-                    return filter_null(array_map(function(&$e) {
-                        return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
-
-                    }, $with));
-                }
-            }
+        if ($request->has('with') == false) {
+            return null;
         }
 
-        return null;
+        $with = $request->input('with');
+        if($with == []) {
+            return null;
+        }
+
+        if (is_array($with) == false) {
+            $with = explode(',', $with);
+        }
+
+        $with = filter_null($with);
+        if($with == []) {
+            return null;
+        }
+
+        $result = filter_null(array_map(function(&$e) {
+            return isset($this->withRelations[$e]) ? $this->withRelations[$e] : null;
+        }, $with));
+
+        array_unique($result);
+        sort($result);
+        return $result;
     }
 
     /**
@@ -146,15 +134,18 @@ trait ControllerHelper
      */
     protected function runFilter(Request $request, $query)
     {
-        if ($filter = $this->getFilter($request)) {
-            foreach ($filter as $v) {
-                list($key, $operator, $value) = $v;
+        $filter = $this->getFilter($request);
+        if($filter == []) {
+            return;
+        }
 
-                if (is_array($value) || $operator == 'in') {
-                    $query->whereIn($key, (array)$value);
-                } else {
-                    $query->where($key, $operator, $value);
-                }
+        foreach ($filter as $v) {
+            list($key, $operator, $value) = $v;
+
+            if (is_array($value) || $operator == 'in') {
+                $query->whereIn($key, (array)$value);
+            } else {
+                $query->where($key, $operator, $value);
             }
         }
     }
