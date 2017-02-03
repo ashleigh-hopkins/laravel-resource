@@ -23,6 +23,11 @@ trait ControllerHelper
 
     protected $withRelations = [];
 
+    public function getFilterKeys()
+    {
+        return $this->filterKeys;
+    }
+
     protected function fireEvent($type, &...$args)
     {
         if (isset($this->events[$type])) {
