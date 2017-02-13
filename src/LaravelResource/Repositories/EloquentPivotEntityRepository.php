@@ -72,8 +72,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         $relation = $parent->{$this->relation}();
 
         // get the "other key"
-        $e = explode('.', $relation->getOtherKey());
-        $key = end($e);
+        $key = $this->getRelatedKey($relation);
 
         $relation->detach($object->{$key});
 
@@ -91,7 +90,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
 
         $relation = $parent->{$this->relation}();
 
-        return $this->queryForParent($parent)->where([$relation->getOtherKey() => $id])->firstOrFail();
+        return $this->queryForParent($parent)->where([$this->getRelatedKey($relation) => $id])->firstOrFail();
     }
 
     /**
@@ -105,7 +104,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
 
         $relation = $parent->{$this->relation}();
 
-        return $relation->where([$relation->getOtherKey() => $id])->firstOrFail();
+        return $relation->where([$this->getRelatedKey($relation) => $id])->firstOrFail();
     }
 
     /**
@@ -138,20 +137,24 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
     public function updateForParent($object, $parent, $input)
     {
         $parent = $this->getParentModel($parent);
-
         $relation = $parent->{$this->relation}();
+        $objectId = $object;
+
+        if(is_object($object)) {
+            $objectId = $object->id;
+        }
 
         $pivot = $this->model->where([
-            $relation->getForeignKey() => $parent->id,
-            $relation->getOtherKey() => $object,
+            $this->getForeignKey($relation) => $parent->id,
+            $this->getRelatedKey($relation) => $objectId,
         ])->first();
 
         if ($pivot === null) {
-            $relation->attach($object, $input + ['version' => 0]);
+            $relation->attach($objectId, $input + ['version' => 0]);
 
             return $this->model->where([
-                $relation->getForeignKey() => $parent->id,
-                $relation->getOtherKey() => $object,
+                $this->getForeignKey($relation) => $parent->id,
+                $this->getRelatedKey($relation) => $objectId,
             ])->first();
         }
 
@@ -169,5 +172,15 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         }
 
         return $pivot;
+    }
+
+    private function getForeignKey($relation)
+    {
+        return array_last(explode('.', $relation->getQualifiedForeignKeyName()));
+    }
+
+    private function getRelatedKey($relation)
+    {
+        return array_last(explode('.', $relation->getQualifiedRelatedKeyName()));
     }
 }
