@@ -69,12 +69,7 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
             $object = $this->getForParent($object, $parent);
         }
 
-        $relation = $parent->{$this->relation}();
-
-        // get the "other key"
-        $key = $this->getRelatedKey($relation);
-
-        $relation->detach($object->{$key});
+        $object->delete();
 
         return $object;
     }
@@ -150,12 +145,15 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
         ])->first();
 
         if ($pivot === null) {
-            $relation->attach($objectId, $input + ['version' => 0]);
-
-            return $this->model->where([
+            $result = $this->model->newInstance([
                 $this->getForeignKey($relation) => $parent->id,
                 $this->getRelatedKey($relation) => $objectId,
-            ])->first();
+                'version' => 0
+            ] + $input);
+
+            $result->save();
+
+            return $result;
         }
 
         $pivot->fill($input);
@@ -164,11 +162,11 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
             // hack to get version tracking working
             if ($this->isVersionTracking($this->model)) {
                 if (isset($pivot->version)) {
-                    $input = ['version' => ++$pivot->version] + $input;
+                    $pivot->version++;
                 }
             }
 
-            $relation->updateExistingPivot($object, $input);
+            $pivot->save();
         }
 
         return $pivot;
