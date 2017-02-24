@@ -44,7 +44,7 @@ abstract class PivotController extends BaseController
     /**
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy() // DELETE
+    public function destroy()
     {
         $args = func_get_args();
         $count = count($args);
@@ -67,7 +67,7 @@ abstract class PivotController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(Request $request) // GET
+    public function index(Request $request)
     {
         $args = func_get_args();
         $count = count($args);
@@ -118,7 +118,7 @@ abstract class PivotController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request) // PUT
+    public function store(Request $request)
     {
         return $this->respondMethodNotAllowed();
     }
@@ -127,12 +127,13 @@ abstract class PivotController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, ...$args) // PUT
+    public function update(Request $request)
     {
+        $args = func_get_args();
         $count = count($args);
 
         $parentId = $args[$count - 2];
-        $id = array_pop($args);
+        $id = $args[$count - 1];
 
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all(), $args) : null;
 
