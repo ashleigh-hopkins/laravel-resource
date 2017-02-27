@@ -46,10 +46,7 @@ abstract class NestedResourceController extends BaseController
     public function destroy() // DELETE
     {
         $args = func_get_args();
-        $count = count($args);
-
-        $parentId = $args[$count - 2];
-        $id = $args[$count - 1];
+        list($parentId, $id) = $args;
 
         $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
@@ -69,9 +66,10 @@ abstract class NestedResourceController extends BaseController
     public function index(Request $request) // GET
     {
         $args = func_get_args();
-        $count = count($args);
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 1];
+        list($parentId) = $args;
 
         $query = property_exists($this, 'query') ? $this->query : $this->repository->queryForParent($parentId);
 
@@ -99,10 +97,10 @@ abstract class NestedResourceController extends BaseController
     public function show(Request $request)
     {
         $args = func_get_args();
-        $count = count($args);
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 2];
-        $id = $args[$count - 1];
+        list($parentId, $id) = $args;
 
         $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
@@ -117,15 +115,13 @@ abstract class NestedResourceController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request) // PUT
+    public function store(Request $request)
     {
         $args = func_get_args();
-
         // remove $request
         array_shift($args);
-        $count = count($args);
 
-        $parentId = $args[$count - 1];
+        list($parentId) = $args;
 
         $validator = $this->validator ? $this->validator->forStore($request->all(), $args) : null;
 
@@ -156,12 +152,13 @@ abstract class NestedResourceController extends BaseController
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, ...$args) // PUT
+    public function update(Request $request)
     {
-        $count = count($args);
+        $args = func_get_args();
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 2];
-        $id = array_pop($args);
+        list($parentId, $id) = $args;
 
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all(), $args) : null;
 

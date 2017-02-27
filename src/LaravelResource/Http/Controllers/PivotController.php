@@ -47,10 +47,7 @@ abstract class PivotController extends BaseController
     public function destroy()
     {
         $args = func_get_args();
-        $count = count($args);
-
-        $parentId = $args[$count - 2];
-        $id = $args[$count - 1];
+        list($parentId, $id) = $args;
 
         $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
@@ -70,9 +67,10 @@ abstract class PivotController extends BaseController
     public function index(Request $request)
     {
         $args = func_get_args();
-        $count = count($args);
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 1];
+        list($parentId) = $args;
 
         $query = property_exists($this, 'query') ? $this->query : $this->repository->queryForParent($parentId);
 
@@ -100,10 +98,10 @@ abstract class PivotController extends BaseController
     public function show(Request $request)
     {
         $args = func_get_args();
-        $count = count($args);
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 2];
-        $id = $args[$count - 1];
+        list($parentId, $id) = $args;
 
         $object = property_exists($this, 'object') ? $this->object : $this->repository->getForParent($id, $parentId);
 
@@ -130,10 +128,10 @@ abstract class PivotController extends BaseController
     public function update(Request $request)
     {
         $args = func_get_args();
-        $count = count($args);
+        // remove $request
+        array_shift($args);
 
-        $parentId = $args[$count - 2];
-        $id = $args[$count - 1];
+        list($parentId, $id) = $args;
 
         $validator = $this->validator ? $this->validator->forUpdate(['id' => $id] + $request->all(), $args) : null;
 
