@@ -79,9 +79,15 @@ abstract class EloquentPivotEntityRepository extends EloquentEntityRepository
      * @param object|Model $parent
      * @return object|Model
      */
-    public function getForParent($id, $parent)
+    public function getForParent($idOrObject, $parent)
     {
         $parent = $this->getParentModel($parent);
+
+        if(is_object($idOrObject)) {
+            $id = $idOrObject->getKey();
+        } else {
+            $id = $idOrObject;
+        }
 
         $relation = $parent->{$this->relation}();
 
